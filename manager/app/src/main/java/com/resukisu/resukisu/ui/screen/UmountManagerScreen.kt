@@ -63,13 +63,10 @@ import com.resukisu.resukisu.ui.component.settings.SettingsBaseWidget
 import com.resukisu.resukisu.ui.component.settings.splicedLazyColumnGroup
 import com.resukisu.resukisu.ui.navigation.LocalNavigator
 import com.resukisu.resukisu.ui.theme.ThemeConfig
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
 import com.resukisu.resukisu.ui.viewmodel.UmountManagerScreenViewModel
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -87,25 +84,6 @@ fun UmountManagerScreen() {
     var isLoading by remember { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
     var showAddDialog by remember { mutableStateOf(false) }
-    val hazeState = if (ThemeConfig.backgroundImageLoaded) rememberHazeState() else null
-
-    val hazeStyle = if (ThemeConfig.backgroundImageLoaded) HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
-            alpha = 0.8f
-        ),
-        tint = HazeTint(Color.Transparent)
-    ) else null
-
-    val collapsedFraction = scrollBehavior.state.collapsedFraction
-    val modifier = if (ThemeConfig.backgroundImageLoaded && hazeStyle != null && hazeState != null) {
-        Modifier.hazeEffect(hazeState) {
-            style = hazeStyle
-            noiseFactor = 0f
-            blurRadius = 30.dp
-            alpha = collapsedFraction
-        }
-    }
-    else Modifier
 
     val confirmDelete = stringResource(R.string.confirm_delete)
 
@@ -118,7 +96,8 @@ fun UmountManagerScreen() {
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                modifier = modifier,
+                modifier = Modifier
+                    .haze(scrollBehavior.state.collapsedFraction),
                 title = { Text(stringResource(R.string.umount_path_manager)) },
                 navigationIcon = {
                     val navigator = LocalNavigator.current
@@ -180,7 +159,7 @@ fun UmountManagerScreen() {
                 },
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(if (hazeState != null) Modifier.hazeSource(hazeState) else Modifier)
+                    .hazeSource()
             ) {
                 LazyColumn(
                     modifier = Modifier

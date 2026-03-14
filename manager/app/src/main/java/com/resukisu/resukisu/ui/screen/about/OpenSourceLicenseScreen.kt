@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,36 +57,18 @@ import com.resukisu.resukisu.ui.component.settings.AppBackButton
 import com.resukisu.resukisu.ui.navigation.LocalNavigator
 import com.resukisu.resukisu.ui.theme.CardConfig
 import com.resukisu.resukisu.ui.theme.ThemeConfig
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun OpenSourceLicenseScreen() {
     val navigator = LocalNavigator.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val hazeState = if (CardConfig.isCustomBackgroundEnabled) rememberHazeState() else null
 
-    val collapsedFraction = scrollBehavior.state.collapsedFraction
-    val hazeStyle = if (ThemeConfig.backgroundImageLoaded) HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
-            alpha = 0.8f
-        ),
-        tint = HazeTint(Color.Transparent)
-    ) else null
-
-    val modifier =
-        if (ThemeConfig.backgroundImageLoaded && hazeStyle != null && hazeState != null) {
-            Modifier.hazeEffect(hazeState) {
-                style = hazeStyle
-                noiseFactor = 0f
-                blurRadius = 30.dp
-                alpha = collapsedFraction
-            }
-        } else Modifier
+    LaunchedEffect(Unit) {
+        scrollBehavior.state.heightOffset = scrollBehavior.state.heightOffsetLimit
+    }
 
     // from https://github.com/mikepenz/AboutLibraries#setup
     // Android: Provide resource identifier for the `R.raw.aboutlibraries` file.
@@ -98,25 +81,25 @@ fun OpenSourceLicenseScreen() {
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         topBar = {
             LargeFlexibleTopAppBar(
-                modifier = modifier,
+                modifier = Modifier.haze(
+                    scrollBehavior.state.collapsedFraction
+                ),
                 windowInsets = TopAppBarDefaults.windowInsets.add(WindowInsets(left = 12.dp)),
                 title = { Text(text = stringResource(id = R.string.open_source_license)) },
                 scrollBehavior = scrollBehavior,
                 navigationIcon = {
-                    Row {
-                        AppBackButton(
-                            onClick = { navigator.pop() },
-                            icon = Icons.AutoMirrored.TwoTone.ArrowBack,
-                            modifier = Modifier.size(36.dp),
-                            containerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                alpha = 0.1f
-                            )
+                    AppBackButton(
+                        onClick = { navigator.pop() },
+                        icon = Icons.AutoMirrored.TwoTone.ArrowBack,
+                        modifier = Modifier.size(36.dp),
+                        containerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = 0.1f
                         )
-                        Spacer(modifier = Modifier.size(16.dp))
-                    }
+                    )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor =
@@ -138,10 +121,12 @@ fun OpenSourceLicenseScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
-                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
+                .hazeSource(),
             contentPadding = paddingValues,// PaddingValues(horizontal = 16.dp),
             colors = LibraryDefaults.libraryColors(
-                libraryBackgroundColor = MaterialTheme.colorScheme.surfaceBright,
+                libraryBackgroundColor = MaterialTheme.colorScheme.surfaceBright.copy(
+                    alpha = CardConfig.cardAlpha
+                ),
                 libraryContentColor = MaterialTheme.colorScheme.onSurface,
                 // To maintain the original appearance, explicitly set the license chip colors
                 // to match the old function's default badge colors.

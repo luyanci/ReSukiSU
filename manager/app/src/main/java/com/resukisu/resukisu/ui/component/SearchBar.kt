@@ -56,10 +56,7 @@ import androidx.compose.ui.unit.dp
 import com.resukisu.resukisu.ui.component.settings.AppBackButton
 import com.resukisu.resukisu.ui.theme.CardConfig
 import com.resukisu.resukisu.ui.theme.ThemeConfig
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
+import com.resukisu.resukisu.ui.theme.haze
 
 private fun Modifier.textFieldBackground(color: ColorProducer, shape: Shape): Modifier =
     this.drawWithCache {
@@ -157,7 +154,7 @@ fun SearchAppBar(
     navigationContent: @Composable (() -> Unit)? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     searchBarPlaceHolderText: String,
-    hazeState: HazeState? = null
+    haze: Boolean = true,
 ) {
     val textFieldState = rememberTextFieldState(initialText = searchText)
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -166,7 +163,6 @@ fun SearchAppBar(
     LaunchedEffect(textFieldState.text) {
         onSearchTextChange(textFieldState.text.toString())
     }
-    val surfaceContainerHigh = MaterialTheme.colorScheme.surfaceContainerHigh
 
     Column(
         modifier = modifier
@@ -176,20 +172,14 @@ fun SearchAppBar(
                 else MaterialTheme.colorScheme.surfaceContainer
             )
             .then(
-                if (hazeState != null) Modifier.hazeEffect(hazeState) {
-                    style = HazeStyle(
-                        backgroundColor = surfaceContainerHigh.copy(alpha = 0.8f),
-                        tint = HazeTint(Color.Transparent)
+                if (haze) {
+                    Modifier.haze(
+                        scrollBehavior?.state?.collapsedFraction ?: 1f
                     )
-                    blurRadius = 30.dp
                 } else Modifier
             )
     ) {
         LargeFlexibleTopAppBar(
-            modifier = modifier.background(
-                if (ThemeConfig.backgroundImageLoaded) Color.Transparent
-                else MaterialTheme.colorScheme.surfaceContainer
-            ),
             scrollBehavior = scrollBehavior,
             title = {
                 Text(
@@ -258,6 +248,5 @@ private fun SearchAppBarPreview() {
         searchText = "",
         onSearchTextChange = {},
         searchBarPlaceHolderText = "",
-        hazeState = null
     )
 }

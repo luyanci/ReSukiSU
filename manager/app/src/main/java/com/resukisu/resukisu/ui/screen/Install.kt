@@ -21,12 +21,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -44,8 +43,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -54,7 +55,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
@@ -87,13 +87,17 @@ import com.resukisu.resukisu.getKernelVersion
 import com.resukisu.resukisu.ui.component.DialogHandle
 import com.resukisu.resukisu.ui.component.rememberConfirmDialog
 import com.resukisu.resukisu.ui.component.rememberCustomDialog
+import com.resukisu.resukisu.ui.component.settings.SettingsBaseWidget
 import com.resukisu.resukisu.ui.component.settings.SettingsDropdownWidget
 import com.resukisu.resukisu.ui.navigation.LocalNavigator
 import com.resukisu.resukisu.ui.navigation.Route
 import com.resukisu.resukisu.ui.theme.CardConfig
 import com.resukisu.resukisu.ui.theme.CardConfig.cardAlpha
+import com.resukisu.resukisu.ui.theme.ThemeConfig
 import com.resukisu.resukisu.ui.theme.getCardColors
 import com.resukisu.resukisu.ui.theme.getCardElevation
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LkmSelection
 import com.resukisu.resukisu.ui.util.getAvailablePartitions
 import com.resukisu.resukisu.ui.util.getCurrentKmi
@@ -289,7 +293,8 @@ fun InstallScreen(
         })
     }
 
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior =
+        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
     Scaffold(
         topBar = {
@@ -298,15 +303,16 @@ fun InstallScreen(
                 scrollBehavior = scrollBehavior
             )
         },
-        contentWindowInsets = WindowInsets.safeDrawing.only(
-            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-        )
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) { innerPadding ->
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
                 .verticalScroll(rememberScrollState())
+                .hazeSource()
                 .padding(top = 12.dp)
         ) {
             SelectInstallMethod(
@@ -398,30 +404,19 @@ fun InstallScreen(
                             .fillMaxWidth()
                             .padding(bottom = 12.dp),
                     ) {
-                        ListItem(
-                            headlineContent = {
-                                Text(stringResource(id = R.string.install_upload_lkm_file))
+                        SettingsBaseWidget(
+                            title = stringResource(id = R.string.install_upload_lkm_file),
+                            onClick = {
+                                onLkmUpload()
                             },
-                            supportingContent = {
-                                (lkmSelection as? LkmSelection.LkmUri)?.let {
-                                    Text(
-                                        stringResource(
-                                            id = R.string.selected_lkm,
-                                            it.uri.lastPathSegment ?: "(file)"
-                                        )
-                                    )
-                                }
-                            },
-                            leadingContent = {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.Input,
-                                    contentDescription = null
+                            description = (lkmSelection as? LkmSelection.LkmUri)?.let {
+                                stringResource(
+                                    id = R.string.selected_lkm,
+                                    it.uri.lastPathSegment ?: "(file)"
                                 )
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onLkmUpload() }
-                        )
+                            icon = Icons.AutoMirrored.Filled.Input,
+                        ) { }
                     }
                 }
 
@@ -1066,30 +1061,28 @@ fun rememberSelectKmiDialog(onSelected: (String?) -> Unit): DialogHandle {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun TopBar(
     onBack: () -> Unit = {},
-    scrollBehavior: TopAppBarScrollBehavior? = null
+    scrollBehavior: TopAppBarScrollBehavior,
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val cardColor = if (CardConfig.isCustomBackgroundEnabled) {
-        colorScheme.surfaceContainerLow
-    } else {
-        colorScheme.background
-    }
-    val cardAlpha = cardAlpha
-
-    TopAppBar(
+    LargeFlexibleTopAppBar(
+        modifier = Modifier.haze(
+            scrollBehavior.state.collapsedFraction
+        ),
         title = {
             Text(
-                stringResource(R.string.install),
-                style = MaterialTheme.typography.titleLarge
+                stringResource(R.string.install)
             )
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = cardColor.copy(alpha = cardAlpha),
-            scrolledContainerColor = cardColor.copy(alpha = cardAlpha)
+            containerColor =
+                if (ThemeConfig.backgroundImageLoaded) Color.Transparent
+                else MaterialTheme.colorScheme.surfaceContainer,
+            scrolledContainerColor =
+                if (ThemeConfig.backgroundImageLoaded) Color.Transparent
+                else MaterialTheme.colorScheme.surfaceContainer,
         ),
         navigationIcon = {
             IconButton(onClick = onBack) {
@@ -1099,9 +1092,7 @@ private fun TopBar(
                 )
             }
         },
-        windowInsets = WindowInsets.safeDrawing.only(
-            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-        ),
+        windowInsets = TopAppBarDefaults.windowInsets.add(WindowInsets(left = 12.dp)),
         scrollBehavior = scrollBehavior
     )
 }

@@ -66,15 +66,10 @@ import com.resukisu.resukisu.ui.component.settings.SettingsJumpPageWidget
 import com.resukisu.resukisu.ui.component.settings.splicedLazyColumnGroup
 import com.resukisu.resukisu.ui.navigation.LocalNavigator
 import com.resukisu.resukisu.ui.navigation.Route
-import com.resukisu.resukisu.ui.theme.CardConfig
 import com.resukisu.resukisu.ui.theme.ThemeConfig
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.viewmodel.TemplateViewModel
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -91,7 +86,6 @@ fun AppProfileTemplateScreen() {
     val scope = rememberCoroutineScope()
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
-    val hazeState = if (CardConfig.isCustomBackgroundEnabled) rememberHazeState() else null
     val navigator = LocalNavigator.current
 
     LaunchedEffect(Unit) {
@@ -158,7 +152,6 @@ fun AppProfileTemplateScreen() {
                     }
                 },
                 scrollBehavior = scrollBehavior,
-                hazeState = hazeState
             )
         },
         floatingActionButton = {
@@ -183,9 +176,11 @@ fun AppProfileTemplateScreen() {
     ) { innerPadding ->
         PullToRefreshBox(
             state = pullRefreshState,
-            modifier = (if (hazeState != null) Modifier.hazeSource(hazeState) else Modifier).nestedScroll(
-                scrollBehavior.nestedScrollConnection
-            ),
+            modifier = Modifier
+                .nestedScroll(
+                    scrollBehavior.nestedScrollConnection
+                )
+                .hazeSource(),
             isRefreshing = viewModel.isRefreshing,
             onRefresh = {
                 scope.launch { viewModel.fetchTemplates() }
@@ -291,31 +286,12 @@ private fun TopBar(
     onSync: () -> Unit = {},
     onImport: () -> Unit = {},
     onExport: () -> Unit = {},
-    scrollBehavior: TopAppBarScrollBehavior? = null,
-    hazeState: HazeState?
+    scrollBehavior: TopAppBarScrollBehavior,
 ) {
-    MaterialTheme.colorScheme
-
-    val hazeStyle = if (ThemeConfig.backgroundImageLoaded) HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
-            alpha = 0.8f
-        ),
-        tint = HazeTint(Color.Transparent)
-    ) else null
-
-    val collapsedFraction = scrollBehavior?.state?.collapsedFraction ?: 0f
-    val modifier =
-        if (ThemeConfig.backgroundImageLoaded && hazeStyle != null && hazeState != null) {
-            Modifier.hazeEffect(hazeState) {
-                style = hazeStyle
-                noiseFactor = 0f
-                blurRadius = 30.dp
-                alpha = collapsedFraction
-            }
-        } else Modifier
-
     LargeFlexibleTopAppBar(
-        modifier = modifier,
+        modifier = Modifier.haze(
+            scrollBehavior.state.collapsedFraction
+        ),
         title = {
             Text(stringResource(R.string.settings_profile_template))
         },

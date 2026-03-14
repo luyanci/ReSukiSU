@@ -20,13 +20,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -46,6 +44,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -53,7 +52,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
@@ -68,6 +66,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -85,7 +84,9 @@ import com.resukisu.resukisu.ui.component.KeyEventBlocker
 import com.resukisu.resukisu.ui.component.rememberCustomDialog
 import com.resukisu.resukisu.ui.navigation.LocalNavigator
 import com.resukisu.resukisu.ui.navigation.Route
-import com.resukisu.resukisu.ui.theme.CardConfig
+import com.resukisu.resukisu.ui.theme.ThemeConfig
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LkmSelection
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
 import com.resukisu.resukisu.ui.util.flashModule
@@ -203,7 +204,8 @@ fun FlashScreen(flashIt: FlashIt) {
     val snackBarHost = LocalSnackbarHost.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior =
+        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val viewModel: ModuleViewModel = viewModel()
 
     val errorCodeString = stringResource(R.string.error_code)
@@ -529,8 +531,8 @@ fun FlashScreen(flashIt: FlashIt) {
             }
         },
         snackbarHost = { SnackbarHost(hostState = snackBarHost) },
-        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) { innerPadding ->
         KeyEventBlocker {
             it.key == Key.VolumeDown || it.key == Key.VolumeUp
@@ -540,7 +542,8 @@ fun FlashScreen(flashIt: FlashIt) {
             modifier = Modifier
                 .fillMaxSize(1f)
                 .padding(innerPadding)
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .hazeSource(),
         ) {
             if (flashIt is FlashIt.FlashModules) {
                 ModuleInstallProgressBar(
@@ -739,22 +742,16 @@ fun ModuleInstallProgressBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun TopBar(
     status: FlashingStatus,
     moduleStatus: ModuleInstallStatus = ModuleInstallStatus(),
     onBack: () -> Unit,
     onSave: () -> Unit = {},
-    scrollBehavior: TopAppBarScrollBehavior? = null
+    scrollBehavior: TopAppBarScrollBehavior
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val cardColor = if (CardConfig.isCustomBackgroundEnabled) {
-        colorScheme.surfaceContainerLow
-    } else {
-        colorScheme.background
-    }
-    val cardAlpha = CardConfig.cardAlpha
+    MaterialTheme.colorScheme
 
     val statusColor = when(status) {
         FlashingStatus.FLASHING -> MaterialTheme.colorScheme.primary
@@ -762,53 +759,58 @@ private fun TopBar(
         FlashingStatus.FAILED -> MaterialTheme.colorScheme.error
     }
 
-    TopAppBar(
+    LargeFlexibleTopAppBar(
+        modifier = Modifier.haze(
+            scrollBehavior.state.collapsedFraction
+        ),
         title = {
-            Column {
+            Text(
+                text = stringResource(
+                    when (status) {
+                        FlashingStatus.FLASHING -> R.string.flashing
+                        FlashingStatus.SUCCESS -> R.string.flash_success
+                        FlashingStatus.FAILED -> R.string.flash_failed
+                    }
+                ),
+                color = statusColor
+            )
+        },
+        subtitle = {
+            if (moduleStatus.failedModules.isNotEmpty()) {
                 Text(
                     text = stringResource(
-                        when (status) {
-                            FlashingStatus.FLASHING -> R.string.flashing
-                            FlashingStatus.SUCCESS -> R.string.flash_success
-                            FlashingStatus.FAILED -> R.string.flash_failed
-                        }
+                        R.string.module_failed_count,
+                        moduleStatus.failedModules.size
                     ),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = statusColor
+                    color = MaterialTheme.colorScheme.error
                 )
-
-                if (moduleStatus.failedModules.isNotEmpty()) {
-                    Text(
-                        text = stringResource(R.string.module_failed_count, moduleStatus.failedModules.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
             }
         },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface
+                    contentDescription = stringResource(id = R.string.back),
                 )
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = cardColor.copy(alpha = cardAlpha),
-            scrolledContainerColor = cardColor.copy(alpha = cardAlpha)
+            containerColor =
+                if (ThemeConfig.backgroundImageLoaded) Color.Transparent
+                else MaterialTheme.colorScheme.surfaceContainer,
+            scrolledContainerColor =
+                if (ThemeConfig.backgroundImageLoaded) Color.Transparent
+                else MaterialTheme.colorScheme.surfaceContainer,
         ),
         actions = {
             IconButton(onClick = onSave) {
                 Icon(
                     imageVector = Icons.Filled.Save,
                     contentDescription = stringResource(id = R.string.save_log),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         },
-        windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+        windowInsets = TopAppBarDefaults.windowInsets.add(WindowInsets(left = 12.dp)),
         scrollBehavior = scrollBehavior
     )
 }

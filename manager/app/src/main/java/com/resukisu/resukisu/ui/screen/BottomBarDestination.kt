@@ -24,45 +24,44 @@ import com.resukisu.resukisu.ui.screen.main.ModulePage
 import com.resukisu.resukisu.ui.screen.main.SettingsPage
 import com.resukisu.resukisu.ui.screen.main.SuperUserPage
 import com.resukisu.resukisu.ui.util.getKpmVersion
-import dev.chrisbanes.haze.HazeState
 
 enum class BottomBarDestination(
-    val direction: @Composable (bottomPadding: Dp, hazeState: HazeState?) -> Unit,
+    val direction: @Composable (bottomPadding: Dp) -> Unit,
     @param:StringRes val label: Int,
     val iconSelected: ImageVector,
     val iconNotSelected: ImageVector,
     val rootRequired: Boolean,
 ) {
     Home(
-        { bottomPadding, hazeState -> HomePage(bottomPadding, hazeState) },
+        { bottomPadding -> HomePage(bottomPadding) },
         R.string.home,
         Icons.Filled.Home,
         Icons.Outlined.Home,
         false
     ),
     Kpm(
-        { bottomPadding, hazeState -> KpmPage(bottomPadding, hazeState) },
+        { bottomPadding -> KpmPage(bottomPadding) },
         R.string.kpm_title,
         Icons.Filled.Archive,
         Icons.Outlined.Archive,
         true
     ),
     SuperUser(
-        { bottomPadding, hazeState -> SuperUserPage(bottomPadding, hazeState) },
+        { bottomPadding -> SuperUserPage(bottomPadding) },
         R.string.superuser,
         Icons.Filled.AdminPanelSettings,
         Icons.Outlined.AdminPanelSettings,
         true
     ),
     Module(
-        { bottomPadding, hazeState -> ModulePage(bottomPadding, hazeState) },
+        { bottomPadding -> ModulePage(bottomPadding) },
         R.string.module,
         Icons.Filled.Extension,
         Icons.Outlined.Extension,
         true
     ),
     Settings(
-        { bottomPadding, hazeState -> SettingsPage(bottomPadding, hazeState) },
+        { bottomPadding -> SettingsPage(bottomPadding) },
         R.string.settings,
         Icons.Filled.Settings,
         Icons.Outlined.Settings,

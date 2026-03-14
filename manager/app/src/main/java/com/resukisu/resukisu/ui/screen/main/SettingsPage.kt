@@ -107,15 +107,14 @@ import com.resukisu.resukisu.ui.navigation.LocalNavigator
 import com.resukisu.resukisu.ui.navigation.Route
 import com.resukisu.resukisu.ui.screen.FlashIt
 import com.resukisu.resukisu.ui.theme.ThemeConfig
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
 import com.resukisu.resukisu.ui.util.execKsud
 import com.resukisu.resukisu.ui.util.getBugreportFile
 import com.resukisu.resukisu.ui.util.getFeatureStatus
-import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -131,7 +130,7 @@ private val SPACING_LARGE = 16.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPage(bottomPadding: Dp, hazeState: HazeState?) {
+fun SettingsPage(bottomPadding: Dp) {
     val navigator = LocalNavigator.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val snackBarHost = LocalSnackbarHost.current
@@ -141,7 +140,7 @@ fun SettingsPage(bottomPadding: Dp, hazeState: HazeState?) {
 
     Scaffold(
         topBar = {
-            TopBar(scrollBehavior = scrollBehavior, hazeState = hazeState)
+            TopBar(scrollBehavior = scrollBehavior)
         },
         snackbarHost = {
             SnackbarHost(
@@ -182,10 +181,9 @@ fun SettingsPage(bottomPadding: Dp, hazeState: HazeState?) {
 
         LazyColumn(
             modifier =
-                (if (hazeState != null)
-                    Modifier.hazeSource(state = hazeState)
-                else Modifier)
-                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                Modifier
+                    .nestedScroll(scrollBehavior.nestedScrollConnection)
+                    .hazeSource(),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding() + 5.dp,
                 start = 0.dp,
@@ -849,28 +847,18 @@ fun rememberUninstallDialog(onSelected: (UninstallType) -> Unit): DialogHandle {
 @Composable
 private fun TopBar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
-    hazeState: HazeState? = null
 ) {
-    val hazeStyle = if (ThemeConfig.backgroundImageLoaded) HazeStyle(
+    if (ThemeConfig.backgroundImageLoaded) HazeStyle(
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
             alpha = 0.8f
         ),
         tint = HazeTint(Color.Transparent)
     ) else null
 
-    val collapsedFraction = scrollBehavior?.state?.collapsedFraction ?: 0f
-    val modifier = if (ThemeConfig.backgroundImageLoaded && hazeStyle != null && hazeState != null) {
-        Modifier.hazeEffect(hazeState) {
-            style = hazeStyle
-            noiseFactor = 0f
-            blurRadius = 30.dp
-            alpha = collapsedFraction
-        }
-    }
-    else Modifier
-
     LargeFlexibleTopAppBar(
-        modifier = modifier,
+        modifier = Modifier.haze(
+            scrollBehavior?.state?.collapsedFraction ?: 1f
+        ),
         title = {
             Text(text = stringResource(R.string.settings))
         },

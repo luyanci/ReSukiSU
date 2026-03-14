@@ -77,7 +77,8 @@ import com.resukisu.resukisu.ui.component.settings.SplicedColumnGroup
 import com.resukisu.resukisu.ui.navigation.LocalNavigator
 import com.resukisu.resukisu.ui.navigation.Route
 import com.resukisu.resukisu.ui.theme.CardConfig
-import com.resukisu.resukisu.ui.theme.ThemeConfig
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
 import com.resukisu.resukisu.ui.util.forceStopApp
 import com.resukisu.resukisu.ui.util.getSepolicy
@@ -86,12 +87,6 @@ import com.resukisu.resukisu.ui.util.restartApp
 import com.resukisu.resukisu.ui.util.setSepolicy
 import com.resukisu.resukisu.ui.viewmodel.SuperUserViewModel
 import com.resukisu.resukisu.ui.viewmodel.getTemplateInfoById
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 
 /**
@@ -131,8 +126,6 @@ fun AppProfileScreen(
         colorScheme.surfaceContainer
     }
 
-    val hazeState = if (CardConfig.isCustomBackgroundEnabled) rememberHazeState() else null
-
     LaunchedEffect(Unit) {
         scrollBehavior.state.heightOffset = scrollBehavior.state.heightOffsetLimit
     }
@@ -148,7 +141,6 @@ fun AppProfileScreen(
                 ),
                 onBack = dropUnlessResumed { navigator.pop() },
                 scrollBehavior = scrollBehavior,
-                hazeState = hazeState
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackBarHost) },
@@ -157,9 +149,10 @@ fun AppProfileScreen(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
     ) { paddingValues ->
         AppProfileInner(
-            modifier = (if (hazeState != null) Modifier.hazeSource(hazeState) else Modifier)
+            modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .hazeSource(),
             topPadding = paddingValues.calculateTopPadding(),
             appGroup = appGroup,
             appIcon = {
@@ -500,28 +493,11 @@ private fun TopBar(
     onBack: () -> Unit,
     colors: TopAppBarColors,
     scrollBehavior: TopAppBarScrollBehavior? = null,
-    hazeState: HazeState? = null
 ) {
-    val hazeStyle = if (ThemeConfig.backgroundImageLoaded) HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
-            alpha = 0.8f
-        ),
-        tint = HazeTint(Color.Transparent)
-    ) else null
-
-    val collapsedFraction = scrollBehavior?.state?.collapsedFraction ?: 0f
-    val modifier = if (ThemeConfig.backgroundImageLoaded && hazeStyle != null && hazeState != null) {
-        Modifier.hazeEffect(hazeState) {
-            style = hazeStyle
-            noiseFactor = 0f
-            blurRadius = 30.dp
-            alpha = collapsedFraction
-        }
-    }
-    else Modifier
-
     LargeFlexibleTopAppBar(
-        modifier = modifier,
+        modifier = Modifier.haze(
+            scrollBehavior?.state?.collapsedFraction ?: 1f
+        ),
         title = {
             Text(
                 text = title,

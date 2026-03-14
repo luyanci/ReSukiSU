@@ -15,14 +15,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -78,14 +74,14 @@ import com.resukisu.resukisu.ui.component.SearchAppBar
 import com.resukisu.resukisu.ui.component.rememberConfirmDialog
 import com.resukisu.resukisu.ui.component.rememberLoadingDialog
 import com.resukisu.resukisu.ui.navigation.LocalNavigator
+import com.resukisu.resukisu.ui.theme.CardConfig
 import com.resukisu.resukisu.ui.theme.ThemeConfig
 import com.resukisu.resukisu.ui.theme.getCardColors
-import com.resukisu.resukisu.ui.theme.getCardElevation
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
 import com.resukisu.resukisu.ui.util.getRootShell
 import com.resukisu.resukisu.ui.util.runCmd
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -170,8 +166,6 @@ fun LogViewerScreen() {
     var pageInfo by remember { mutableStateOf(LogPageInfo()) }
     var lastLogFileHash by remember { mutableStateOf("") }
     val currentUid = remember { myUid().toString() }
-
-    val hazeState = if (ThemeConfig.backgroundImageLoaded) rememberHazeState() else null
 
     val initialExcluded = remember {
         loadExcludedSubTypes(context)
@@ -271,7 +265,16 @@ fun LogViewerScreen() {
 
     Scaffold(
         topBar = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .background(
+                        if (ThemeConfig.backgroundImageLoaded) Color.Transparent
+                        else MaterialTheme.colorScheme.surfaceContainer
+                    )
+                    .haze(
+                        scrollBehavior.state.collapsedFraction
+                    )
+            ) {
                 val navigator = LocalNavigator.current
                 val clearLogs = stringResource(R.string.log_viewer_clear_logs)
                 val clearLogsConfirm = stringResource(R.string.log_viewer_clear_logs_confirm)
@@ -311,7 +314,7 @@ fun LogViewerScreen() {
                             )
                         }
                     },
-                    hazeState = hazeState
+                    haze = false,
                 )
                 Box(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -336,15 +339,16 @@ fun LogViewerScreen() {
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
         snackbarHost = { SnackbarHost(snackBarHost) },
-        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
     ) { paddingValues ->
         Column (
-            modifier = if (hazeState != null) Modifier.hazeSource(hazeState) else Modifier
+            modifier = Modifier.hazeSource()
         ){
             // 日志列表
             if (isLoading && logEntries.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
                     LoadingIndicator()
@@ -384,8 +388,11 @@ private fun LogControlPanel(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        colors = getCardColors(MaterialTheme.colorScheme.surfaceContainerLow),
-        elevation = getCardElevation()
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+                alpha = CardConfig.cardAlpha
+            )
+        ),
     ) {
         Column {
             // 标题栏（点击展开/收起）

@@ -94,7 +94,6 @@ import com.resukisu.resukisu.ui.navigation.HandleDeepLink
 import com.resukisu.resukisu.ui.navigation.LocalNavigator
 import com.resukisu.resukisu.ui.navigation.Route
 import com.resukisu.resukisu.ui.navigation.rememberNavigator
-import com.resukisu.resukisu.ui.screen.AboutScreen
 import com.resukisu.resukisu.ui.screen.AppProfileScreen
 import com.resukisu.resukisu.ui.screen.AppProfileTemplateScreen
 import com.resukisu.resukisu.ui.screen.BottomBarDestination
@@ -105,6 +104,7 @@ import com.resukisu.resukisu.ui.screen.InstallScreen
 import com.resukisu.resukisu.ui.screen.LogViewerScreen
 import com.resukisu.resukisu.ui.screen.TemplateEditorScreen
 import com.resukisu.resukisu.ui.screen.UmountManagerScreen
+import com.resukisu.resukisu.ui.screen.about.AboutScreen
 import com.resukisu.resukisu.ui.screen.about.OpenSourceLicenseScreen
 import com.resukisu.resukisu.ui.screen.moduleRepo.ModuleRepoScreen
 import com.resukisu.resukisu.ui.screen.moduleRepo.OnlineModuleDetailScreen
@@ -113,7 +113,9 @@ import com.resukisu.resukisu.ui.theme.CardConfig
 import com.resukisu.resukisu.ui.theme.KernelSUTheme
 import com.resukisu.resukisu.ui.theme.ThemeConfig
 import com.resukisu.resukisu.ui.theme.backgroundImagePainter
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LocalHandlePageChange
+import com.resukisu.resukisu.ui.util.LocalHazeState
 import com.resukisu.resukisu.ui.util.LocalPagerState
 import com.resukisu.resukisu.ui.util.LocalSelectedPage
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
@@ -122,7 +124,6 @@ import com.resukisu.resukisu.ui.util.rootAvailable
 import com.resukisu.resukisu.ui.viewmodel.HomeViewModel
 import com.resukisu.resukisu.ui.viewmodel.SuperUserViewModel
 import com.resukisu.resukisu.ui.webui.WebUIActivity
-import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -410,7 +411,11 @@ class MainActivity : ComponentActivity() {
                                                     else
                                                         MaterialTheme.colorScheme.surfaceContainer
 
-                                                Pair(modifier, backgroundColor)
+                                                Triple(
+                                                    modifier,
+                                                    backgroundColor,
+                                                    if (gestureState?.transitionState is InProgress) 16.dp else 0.dp
+                                                )
                                             } else {
                                                 val modifier =
                                                     if (gestureState?.transitionState is InProgress) {
@@ -429,46 +434,42 @@ class MainActivity : ComponentActivity() {
                                                             }
                                                     } else Modifier
 
-                                                Pair(modifier, Color.Transparent)
+                                                Triple(modifier, Color.Transparent, 0.dp)
                                             }
 
                                         val surfaceContainer =
                                             MaterialTheme.colorScheme.surfaceContainer
-                                        Surface(
-                                            modifier = tripe.first,
-                                            color = tripe.second,
-                                            shape = RoundedCornerShape(16.dp),
+
+                                        CompositionLocalProvider(
+                                            LocalHazeState provides if (CardConfig.isCustomBackgroundEnabled) rememberHazeState() else null
                                         ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .zIndex(-1f)
-                                                    .then(
-                                                        // This page is previous page, background image showing and is backing?
-                                                        if ((pageKey == navigator.current()
-                                                                .toString() ||
-                                                                    exitingPageKey == content.contentKey.toString()) &&
-                                                            backgroundImagePainter != null && (gestureState?.transitionState is InProgress)
-                                                        ) {
-                                                            Modifier
-                                                                .paint(
-                                                                    painter = backgroundImagePainter!!,
-                                                                    contentScale = ContentScale.Crop,
-                                                                )
-                                                                .drawWithContent {
-                                                                    drawContent()
-                                                                    drawRect(
-                                                                        color = surfaceContainer.copy(
-                                                                            alpha = ThemeConfig.backgroundDim
-                                                                        )
+                                            Surface(
+                                                modifier = tripe.first,
+                                                color = tripe.second,
+                                                shape = RoundedCornerShape(tripe.third),
+                                            ) {
+                                                Box(
+                                                    modifier = backgroundImagePainter?.let {
+                                                        Modifier
+                                                            .fillMaxSize()
+                                                            .zIndex(-1f)
+                                                            .paint(
+                                                                painter = it,
+                                                                contentScale = ContentScale.Crop,
+                                                            )
+                                                            .drawWithContent {
+                                                                drawContent()
+                                                                drawRect(
+                                                                    color = surfaceContainer.copy(
+                                                                        alpha = ThemeConfig.backgroundDim
                                                                     )
-                                                                }
-                                                        } else {
-                                                            Modifier
-                                                        }
-                                                    )
-                                            )
-                                            content.Content()
+                                                                )
+                                                            }
+                                                            .hazeSource()
+                                                    } ?: Modifier
+                                                )
+                                                content.Content()
+                                            }
                                         }
                                     }
                                 ),
@@ -665,7 +666,6 @@ fun MainScreen() {
     var animating by remember { mutableStateOf(false) }
     var animateJob by remember { mutableStateOf<Job?>(null) }
     var lastRequestedPage by remember { mutableIntStateOf(pagerState.currentPage) }
-    val hazeState = if (ThemeConfig.backgroundImageLoaded) rememberHazeState() else null
 
     val handlePageChange: (Int) -> Unit = remember(pagerState, coroutineScope) {
         { page ->
@@ -729,7 +729,6 @@ fun MainScreen() {
             MainScreenContent(
                 isPortrait = isPortrait,
                 pages = pages,
-                hazeState = hazeState,
                 userScrollEnabled = userScrollEnabled,
                 pagerState = pagerState,
             )
@@ -741,7 +740,6 @@ fun MainScreen() {
 private fun MainScreenContent(
     isPortrait: Boolean,
     pages: List<BottomBarDestination>,
-    hazeState: HazeState?,
     userScrollEnabled: Boolean,
     pagerState: PagerState
 ) {
@@ -754,7 +752,7 @@ private fun MainScreenContent(
         ) { pageIndex ->
             if (pages.isEmpty()) return@HorizontalPager
             val destination = pages[pageIndex]
-            destination.direction(paddingBottom, hazeState)
+            destination.direction(paddingBottom)
         }
     }
 
@@ -764,7 +762,6 @@ private fun MainScreenContent(
             bottomBar = {
                 NavigationBar(
                     destinations = pages,
-                    hazeState = hazeState,
                     isBottomBar = true,
                 )
             },
@@ -776,7 +773,6 @@ private fun MainScreenContent(
         Row(modifier = Modifier.fillMaxSize()) {
             NavigationBar(
                 destinations = pages,
-                hazeState = hazeState,
                 isBottomBar = false,
             )
             content(0.dp)

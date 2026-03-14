@@ -81,13 +81,12 @@ import com.resukisu.resukisu.ui.component.rememberCustomDialog
 import com.resukisu.resukisu.ui.component.rememberFabVisibilityState
 import com.resukisu.resukisu.ui.theme.getCardColors
 import com.resukisu.resukisu.ui.theme.getCardElevation
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
 import com.resukisu.resukisu.ui.util.getRootShell
 import com.resukisu.resukisu.ui.util.loadKpmModule
 import com.resukisu.resukisu.ui.util.unloadKpmModule
 import com.resukisu.resukisu.ui.viewmodel.KpmViewModel
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
@@ -99,7 +98,7 @@ import java.net.URLEncoder
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun KpmPage(bottomPadding: Dp, hazeState: HazeState?) {
+fun KpmPage(bottomPadding: Dp) {
     val viewModel: KpmViewModel = viewModel<KpmViewModel>()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -333,7 +332,6 @@ fun KpmPage(bottomPadding: Dp, hazeState: HazeState?) {
                     }
                 },
                 searchBarPlaceHolderText = stringResource(R.string.search_modules),
-                hazeState = hazeState
             )
         },
         floatingActionButton = {
@@ -375,8 +373,9 @@ fun KpmPage(bottomPadding: Dp, hazeState: HazeState?) {
         }
     ) { innerPadding ->
         Column(
-            modifier = (if (hazeState != null) Modifier.hazeSource(state = hazeState) else Modifier)
-                .fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(),
         ) {
             Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
             if (!isNoticeClosed) {

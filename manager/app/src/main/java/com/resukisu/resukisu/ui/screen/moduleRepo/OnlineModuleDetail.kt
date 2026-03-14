@@ -90,16 +90,13 @@ import com.resukisu.resukisu.ui.component.settings.SplicedColumnGroup
 import com.resukisu.resukisu.ui.navigation.LocalNavigator
 import com.resukisu.resukisu.ui.theme.CardConfig
 import com.resukisu.resukisu.ui.theme.ThemeConfig
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
 import com.resukisu.resukisu.ui.util.module.ReleaseAssetInfo
 import com.resukisu.resukisu.ui.util.module.ReleaseInfo
 import com.resukisu.resukisu.ui.viewmodel.ModuleRepoViewModel
 import com.resukisu.resukisu.ui.viewmodel.formatFileSize
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -119,7 +116,6 @@ fun OnlineModuleDetailScreen(module: ModuleRepoViewModel.RepoModule) {
     val tabTitles = listOf(stringResource(R.string.readme), stringResource(R.string.release), stringResource(R.string.info))
     val uriHandler = LocalUriHandler.current
     val pagerState = rememberPagerState(pageCount = { tabTitles.size })
-    val hazeState = if (ThemeConfig.backgroundImageLoaded) rememberHazeState() else null
 
     LaunchedEffect(Unit) {
         scrollBehavior.state.heightOffset =
@@ -128,26 +124,10 @@ fun OnlineModuleDetailScreen(module: ModuleRepoViewModel.RepoModule) {
 
     Scaffold(
         topBar = {
-            val hazeStyle = if (ThemeConfig.backgroundImageLoaded) HazeStyle(
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
-                    alpha = 0.8f
-                ),
-                tint = HazeTint(Color.Transparent)
-            ) else null
-
-            val collapsedFraction = scrollBehavior.state.collapsedFraction
-            val modifier = if (ThemeConfig.backgroundImageLoaded && hazeStyle != null && hazeState != null) {
-                Modifier.hazeEffect(hazeState) {
-                    style = hazeStyle
-                    noiseFactor = 0f
-                    blurRadius = 30.dp
-                    alpha = collapsedFraction
-                }
-            }
-            else Modifier
-
             Column(
-                modifier = modifier
+                modifier = Modifier.haze(
+                    scrollBehavior.state.collapsedFraction
+                )
             ) {
                 LargeFlexibleTopAppBar(
                     title = { Text(module.moduleName) },
@@ -219,9 +199,12 @@ fun OnlineModuleDetailScreen(module: ModuleRepoViewModel.RepoModule) {
         ),
         snackbarHost = { SnackbarHost(hostState = snackBarHost) }
     ) { innerPadding ->
-        Column(modifier = if (hazeState != null) Modifier.hazeSource(hazeState) else Modifier
-            .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .hazeSource()
+        ) {
 
             HorizontalPager(
                 state = pagerState,

@@ -31,6 +31,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SignalWifiOff
 import androidx.compose.material.icons.outlined.Download
@@ -54,6 +56,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -101,9 +104,9 @@ import com.resukisu.resukisu.ui.navigation.Navigator
 import com.resukisu.resukisu.ui.navigation.Route
 import com.resukisu.resukisu.ui.screen.FlashIt
 import com.resukisu.resukisu.ui.screen.LabelText
-import com.resukisu.resukisu.ui.theme.ThemeConfig
 import com.resukisu.resukisu.ui.theme.getCardColors
 import com.resukisu.resukisu.ui.theme.getCardElevation
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
 import com.resukisu.resukisu.ui.util.download
 import com.resukisu.resukisu.ui.util.module.ReleaseAssetInfo
@@ -111,8 +114,6 @@ import com.resukisu.resukisu.ui.util.module.ReleaseInfo
 import com.resukisu.resukisu.ui.viewmodel.ModuleRepoViewModel
 import com.resukisu.resukisu.ui.viewmodel.ModuleRepoViewModel.RepoModule
 import com.resukisu.resukisu.ui.viewmodel.formatFileSize
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -150,7 +151,6 @@ fun ModuleRepoScreen() {
         viewModel.sortStargazerCountFirst = prefs.getBoolean("module_repo_sort_star_first", false)
     }
 
-    val hazeState = if (ThemeConfig.backgroundImageLoaded) rememberHazeState() else null
     val isLoading = viewModel.modules.isEmpty()
 
     Scaffold(
@@ -177,7 +177,6 @@ fun ModuleRepoScreen() {
                 },
                 scrollBehavior = scrollBehavior,
                 searchBarPlaceHolderText = stringResource(R.string.search_modules),
-                hazeState = hazeState
             )
         },
         containerColor = Color.Transparent,
@@ -243,7 +242,7 @@ fun ModuleRepoScreen() {
             }
         } else {
             PullToRefreshBox(
-                modifier = if (hazeState != null) Modifier.hazeSource(hazeState) else Modifier,
+                modifier = Modifier.hazeSource(),
                 state = pullRefreshState,
                 isRefreshing = viewModel.isRefreshing,
                 onRefresh = {
@@ -379,6 +378,23 @@ private fun ModuleRepoBottomSheetContent(
                         scope.launch {
                             bottomSheetState.hide()
                             onDismiss()
+                        }
+                    },
+                    thumbContent = {
+                        if (viewModel.sortStargazerCountFirst) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(SwitchDefaults.IconSize),
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                modifier = Modifier.size(SwitchDefaults.IconSize),
+                            )
                         }
                     }
                 )

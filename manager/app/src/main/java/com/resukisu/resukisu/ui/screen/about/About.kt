@@ -1,4 +1,4 @@
-package com.resukisu.resukisu.ui.screen
+package com.resukisu.resukisu.ui.screen.about
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -60,41 +60,21 @@ import com.resukisu.resukisu.ui.navigation.Navigator
 import com.resukisu.resukisu.ui.navigation.Route
 import com.resukisu.resukisu.ui.theme.CardConfig
 import com.resukisu.resukisu.ui.theme.ThemeConfig
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AboutScreen() {
     val navigator = LocalNavigator.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val hazeState = if (CardConfig.isCustomBackgroundEnabled) rememberHazeState() else null
-
-    val collapsedFraction = scrollBehavior.state.collapsedFraction
-    val hazeStyle = if (ThemeConfig.backgroundImageLoaded) HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
-            alpha = 0.8f
-        ),
-        tint = HazeTint(Color.Transparent)
-    ) else null
-
-    val modifier =
-        if (ThemeConfig.backgroundImageLoaded && hazeStyle != null && hazeState != null) {
-            Modifier.hazeEffect(hazeState) {
-                style = hazeStyle
-                noiseFactor = 0f
-                blurRadius = 30.dp
-                alpha = collapsedFraction
-            }
-        } else Modifier
 
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                modifier = modifier,
+                modifier = Modifier.haze(
+                    scrollBehavior.state.collapsedFraction
+                ),
                 windowInsets = TopAppBarDefaults.windowInsets.add(WindowInsets(left = 12.dp)),
                 title = { Text(text = stringResource(id = R.string.about)) },
                 scrollBehavior = scrollBehavior,
@@ -124,7 +104,7 @@ fun AboutScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
+                .hazeSource(),
         ) {
             item {
                 Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
@@ -145,7 +125,9 @@ fun AboutScreen() {
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
                         .padding(top = 8.dp, bottom = 12.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+                        alpha = CardConfig.cardAlpha
+                    ),
                     message = AnnotatedString.fromHtml(
                         htmlString = stringResource(
                             id = R.string.about_anime_character_sticker,
@@ -226,7 +208,9 @@ fun AboutScreenPreview() {
 private fun StatusCard() {
     ElevatedCard(
         colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(
+                alpha = CardConfig.cardAlpha
+            ),
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
         )
     ) {

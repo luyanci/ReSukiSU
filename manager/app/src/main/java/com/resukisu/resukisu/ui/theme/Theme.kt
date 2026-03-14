@@ -1,6 +1,8 @@
 package com.resukisu.resukisu.ui.theme
 
+import android.R
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.util.Log
@@ -25,30 +27,42 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.edit
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.kyant.m3color.hct.Hct
+import com.kyant.m3color.quantize.QuantizerCelebi
 import com.kyant.m3color.scheme.SchemeTonalSpot
+import com.kyant.m3color.score.Score
 import com.resukisu.resukisu.ui.theme.util.BackgroundTransformation
 import com.resukisu.resukisu.ui.theme.util.saveTransformedBackground
+import com.resukisu.resukisu.ui.util.LocalHazeState
 import com.resukisu.resukisu.ui.webui.MonetColorsProvider
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
@@ -109,11 +123,13 @@ object ThemeManager {
 
     fun saveThemeMode(context: Context, forceDark: Boolean?) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
-            putString("theme_mode", when (forceDark) {
-                true -> "dark"
-                false -> "light"
-                null -> "system"
-            })
+            putString(
+                "theme_mode", when (forceDark) {
+                    true -> "dark"
+                    false -> "light"
+                    null -> "system"
+                }
+            )
         }
         ThemeConfig.forceDarkMode = forceDark
     }
@@ -327,11 +343,18 @@ private fun ThemeInitializer(context: Context, systemIsDark: Boolean) {
 @Composable
 private fun BackgroundLayer() {
     val backgroundUri = rememberSaveable { mutableStateOf(ThemeConfig.customBackgroundUri) }
+    val prefs =
+        LocalContext.current
+            .getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
 
     LaunchedEffect(ThemeConfig.customBackgroundUri) {
         backgroundUri.value = ThemeConfig.customBackgroundUri
         if (backgroundUri.value == null) {
             backgroundImagePainter = null
+            backgroundSeedColor = 0
+            prefs.edit(commit = true) {
+                remove("cached_seed_color")
+            }
         }
     }
 
@@ -347,16 +370,94 @@ private fun BackgroundLayer() {
 
     // 自定义背景
     backgroundUri.value?.let { uri ->
-        CustomBackgroundLayer(uri = uri)
+        BackgroundInitializer(uri = uri)
     }
 }
 
-var backgroundImagePainter: AsyncImagePainter? = null
+var backgroundImagePainter: AsyncImagePainter? by mutableStateOf(null)
+var backgroundSeedColor by mutableIntStateOf(0)
+
+/**
+ * Captures background content for hazeEffect child nodes,
+ * It will only work when hazeState available
+ * @return modified modifier
+ */
+@Composable
+fun Modifier.hazeSource(): Modifier {
+    return LocalHazeState.current?.let {
+        hazeSource(it)
+    } ?: this
+}
+
+/**
+ * Render haze when hazeState available
+ * @param alpha the alpha of hazeEffect
+ * @return modified modifier
+ */
+@Composable
+fun Modifier.haze(
+    alpha: Float = 1f
+): Modifier {
+    return LocalHazeState.current?.let {
+        val dark = isInDarkTheme(ThemeConfig.forceDarkMode)
+
+        val hazeStyle = HazeStyle(
+            backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tint = HazeTint(Color.Transparent)
+        )
+
+        hazeEffect(it) {
+            style = hazeStyle
+            blurRadius = 30.dp
+            noiseFactor = if (dark) 0f else 0.2f
+            this.alpha = alpha
+        }
+    } ?: this
+}
+
+private suspend fun Bitmap.extractSeedColor(
+    maxColors: Int = 128,
+    fallbackColorArgb: Int = -12417548
+): Int = withContext(Dispatchers.IO) {
+    val scaledBitmap = this@extractSeedColor.scale(128, 128)
+
+    val width = scaledBitmap.width
+    val height = scaledBitmap.height
+    val pixels = IntArray(width * height)
+    scaledBitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+    val colorToCountMap: Map<Int, Int> = QuantizerCelebi.quantize(pixels, maxColors)
+    val sortedColors: List<Int> = Score.score(colorToCountMap, 10, fallbackColorArgb, true)
+
+    if (scaledBitmap != this@extractSeedColor) {
+        scaledBitmap.recycle()
+    }
+
+    sortedColors.firstOrNull() ?: fallbackColorArgb
+}
 
 @Composable
-private fun CustomBackgroundLayer(uri: Uri) {
+private fun BackgroundInitializer(uri: Uri) {
+    val coroutineScope = rememberCoroutineScope()
+
+    val dynamicColorFromSystem =
+        if (Build.VERSION.SDK_INT >= 31)
+            colorResource(id = R.color.system_accent1_500).toArgb()
+        else -12417548
+
+    val prefs = LocalContext.current
+        .getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+
+    val calcedCachedSeedColor =
+        prefs
+            .getInt("cached_seed_color", dynamicColorFromSystem)
+
     backgroundImagePainter = rememberAsyncImagePainter(
-        model = uri,
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(uri)
+            .allowHardware(false)
+            .crossfade(true)
+            .build(),
         onError = { error ->
             Log.e("ThemeSystem", "背景加载失败: ${error.result.throwable.message}")
             ThemeConfig.customBackgroundUri = null
@@ -365,33 +466,21 @@ private fun CustomBackgroundLayer(uri: Uri) {
             Log.d("ThemeSystem", "背景加载成功")
             ThemeConfig.backgroundImageLoaded = true
             ThemeConfig.isThemeChanging = false
+            backgroundSeedColor = calcedCachedSeedColor
+            coroutineScope.launch {
+                backgroundSeedColor = it.result.drawable.toBitmap().extractSeedColor(
+                    fallbackColorArgb = calcedCachedSeedColor
+                )
+
+                prefs.edit(commit = true) {
+                    putInt("cached_seed_color", backgroundSeedColor)
+                }
+            }
         }
     )
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .zIndex(-1f)
-    ) {
-        backgroundImagePainter?.let { painter ->
-            val surfaceContainer = MaterialTheme.colorScheme.surfaceContainer
-            // 背景图片
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .paint(
-                        painter = painter,
-                        contentScale = ContentScale.Crop,
-                    )
-                    .drawWithContent {
-                        drawContent()
-                        drawRect(color = surfaceContainer.copy(alpha = ThemeConfig.backgroundDim))
-                    }
-            )
-        }
-    }
 }
 
+// TODO migrate to MaterialKolor, provide scheme settings/dynamic seed color/spec 2025 to user settings
 @Composable
 private fun createColorScheme(
     darkTheme: Boolean,
@@ -399,7 +488,9 @@ private fun createColorScheme(
 ): ColorScheme {
     return when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val hct = Hct.fromInt(colorResource(id = android.R.color.system_accent1_500).toArgb())
+            val seedColor =
+                if (ThemeConfig.backgroundImageLoaded) backgroundSeedColor else colorResource(id = R.color.system_accent1_500).toArgb()
+            val hct = Hct.fromInt(seedColor)
             val scheme = SchemeTonalSpot(hct, darkTheme, 0.0)
             MaterialTheme.colorScheme.copy(
                 primary = scheme.primary.toColor(),
@@ -440,6 +531,7 @@ private fun createColorScheme(
                 surfaceContainerLowest = scheme.surfaceContainerLowest.toColor(),
             )
         }
+
         darkTheme -> createDarkColorScheme()
         else -> createLightColorScheme()
     }
@@ -551,9 +643,16 @@ private fun createLightColorScheme() = lightColorScheme(
 
 // 向后兼容
 @OptIn(DelicateCoroutinesApi::class)
-fun Context.saveAndApplyCustomBackground(uri: Uri, transformation: BackgroundTransformation? = null) {
-    kotlinx.coroutines.GlobalScope.launch {
-        BackgroundManager.saveAndApplyCustomBackground(this@saveAndApplyCustomBackground, uri, transformation)
+fun Context.saveAndApplyCustomBackground(
+    uri: Uri,
+    transformation: BackgroundTransformation? = null
+) {
+    GlobalScope.launch {
+        BackgroundManager.saveAndApplyCustomBackground(
+            this@saveAndApplyCustomBackground,
+            uri,
+            transformation
+        )
     }
 }
 
@@ -582,7 +681,7 @@ fun Context.saveDynamicColorState(enabled: Boolean) {
 @Composable
 @ReadOnlyComposable
 fun isInDarkTheme(themeMode: Boolean?): Boolean {
-    return when(themeMode) {
+    return when (themeMode) {
         true -> true // 强制深色
         false -> false // 强制浅色
         null -> isSystemInDarkTheme() // 跟随系统

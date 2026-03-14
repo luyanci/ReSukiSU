@@ -111,16 +111,13 @@ import com.resukisu.resukisu.ui.theme.CardConfig.cardElevation
 import com.resukisu.resukisu.ui.theme.ThemeConfig
 import com.resukisu.resukisu.ui.theme.getCardColors
 import com.resukisu.resukisu.ui.theme.getCardElevation
+import com.resukisu.resukisu.ui.theme.haze
+import com.resukisu.resukisu.ui.theme.hazeSource
 import com.resukisu.resukisu.ui.util.LocalSnackbarHost
 import com.resukisu.resukisu.ui.util.checkNewVersion
 import com.resukisu.resukisu.ui.util.module.LatestVersionInfo
 import com.resukisu.resukisu.ui.util.reboot
 import com.resukisu.resukisu.ui.viewmodel.HomeViewModel
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -134,7 +131,6 @@ import kotlinx.coroutines.withContext
 @Composable
 fun HomePage(
     bottomPadding: Dp,
-    hazeState: HazeState?
 ) {
     val context = LocalContext.current
     val viewModel = viewModel<HomeViewModel>(
@@ -162,7 +158,6 @@ fun HomePage(
             TopBar(
                 viewModel = viewModel,
                 scrollBehavior = scrollBehavior,
-                hazeState = hazeState
             )
         },
         containerColor = Color.Transparent,
@@ -181,8 +176,9 @@ fun HomePage(
             state = pullRefreshState,
             isRefreshing = viewModel.isRefreshing,
             onRefresh = { viewModel.refreshData(context) },
-            modifier = (if (hazeState != null) Modifier.hazeSource(state = hazeState) else Modifier)
-                .fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(),
             indicator = {
                 PullToRefreshDefaults.LoadingIndicator(
                     modifier = Modifier
@@ -198,10 +194,13 @@ fun HomePage(
                     .fillMaxSize()
                     .nestedScroll(scrollBehavior.nestedScrollConnection)
                     .verticalScroll(scrollState)
-                    .padding(top = 12.dp, start = 16.dp, end = 16.dp),
+                    .padding(
+                        top = innerPadding.calculateTopPadding() + 2.dp,
+                        start = 16.dp,
+                        end = 16.dp
+                    ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
                 // 状态卡片
                 if (viewModel.isCoreDataLoaded) {
                     StatusCard(
@@ -376,30 +375,13 @@ fun RebootDropdownItem(@StringRes id: Int, reason: String = "") {
 private fun TopBar(
     viewModel: HomeViewModel,
     scrollBehavior: TopAppBarScrollBehavior? = null,
-    hazeState: HazeState? = null
 ) {
     val navigator = LocalNavigator.current
 
-    val hazeStyle = if (ThemeConfig.backgroundImageLoaded) HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
-            alpha = 0.8f
-        ),
-        tint = HazeTint(Color.Transparent)
-    ) else null
-
-    val collapsedFraction = scrollBehavior?.state?.collapsedFraction ?: 0f
-    val modifier = if (ThemeConfig.backgroundImageLoaded && hazeStyle != null && hazeState != null) {
-        Modifier.hazeEffect(hazeState) {
-            style = hazeStyle
-            noiseFactor = 0f
-            blurRadius = 30.dp
-            alpha = collapsedFraction
-        }
-    }
-    else Modifier
-
     LargeFlexibleTopAppBar(
-        modifier = modifier,
+        modifier = Modifier.haze(
+            scrollBehavior?.state?.collapsedFraction ?: 1f
+        ),
         title = {
             Text(
                 text = stringResource(R.string.app_name)
