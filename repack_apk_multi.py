@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Batch APK repack tool - Multi-APK support based on repack_apk.py
-Auto-detects architecture from filename, no additional args added
 """
 
 import sys
