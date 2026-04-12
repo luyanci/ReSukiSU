@@ -155,7 +155,6 @@ Lanjutkan?</string>
     <string name="home_android_version">Versi Android</string>
     <string name="home_device_model">Model Perangkat</string>
     <string name="su_not_allowed">Pemberian hak superuser untuk %s tidak diizinkan</string>
-%2$s</string>
     <string name="more_settings">Pengaturan Lainnya</string>
     <string name="selinux_enabled">Diaktifkan</string>
     <string name="selinux_disabled">Dinonaktifkan</string>
