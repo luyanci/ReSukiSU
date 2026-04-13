@@ -801,7 +801,8 @@ private fun AppGroupItem(
                 } else if (!appGroup.allowSu) {
                     LabelText(
                         label = "DEFAULT",
-                        containerColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 if (appGroup.apps.size > 1) {
