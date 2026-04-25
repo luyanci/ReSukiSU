@@ -228,6 +228,38 @@ fun HomePage(
                         }
                     )
 
+
+                    if (viewModel.systemStatus.isManager && BuildConfig.IS_PR_BUILD) {
+                        WarningCard(
+                            message = stringResource(
+                                id = R.string.home_pr_build_warning
+                            ),
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.TwoTone.Error,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
+                    }
+                    if (viewModel.systemStatus.isManager && !BuildConfig.IS_PR_BUILD && Natives.isPrBuild) {
+                        WarningCard(
+                            message = stringResource(
+                                id = R.string.home_pr_kernel_warning
+                            ),
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.TwoTone.Error,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
+                    }
+
                     if (viewModel.systemStatus.requireNewKernel) {
                         WarningCard(
                             message = stringResource(

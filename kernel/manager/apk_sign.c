@@ -35,9 +35,12 @@ static apk_sign_key_t apk_sign_keys[] = {
     { EXPECTED_SIZE_RSUNTK, EXPECTED_HASH_RSUNTK }, // rsuntk/KernelSU
     { EXPECTED_SIZE_SUKISU, EXPECTED_HASH_SUKISU }, // SukiSU-Ultra/SukiSU-Ultra
     { EXPECTED_SIZE_KOWX712, EXPECTED_HASH_KOWX712 }, // KOWX712/KernelSU
+#endif
 #ifdef EXPECTED_SIZE
     { EXPECTED_SIZE, EXPECTED_HASH }, // Custom
 #endif
+#ifdef EXPECTED_SIZE2
+    { EXPECTED_SIZE2, EXPECTED_HASH2 }, // Custom 2 (For PR build)
 #endif
 };
 
