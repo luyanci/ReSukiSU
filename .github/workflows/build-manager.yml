@@ -117,12 +117,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - spoofed: "true"
+          - manager_type: "spoofed"
             build_type: "release"
 
-          - spoofed: "false"
+          - manager_type: "normal"
             build_type: "release"
-          - spoofed: "false"
+          - manager_type: "normal"
             build_type: "debug"
     defaults:
       run:
@@ -146,14 +146,14 @@ jobs:
       - name: Determine manager variant
         id: determine
         run: |
-          if [ "${{ matrix.spoofed }}" == "true" ]; then
+          if [ "${{ matrix.manager_type }}" == "spoofed" ]; then
             echo "title=Spoofed-Manager" >> $GITHUB_OUTPUT
           else
             echo "title=Manager" >> $GITHUB_OUTPUT
           fi
 
       - name: Run randomizer
-        if: ${{ matrix.spoofed == 'true' }}
+        if: ${{ matrix.manager_type == 'spoofed' }}
         run: |
           chmod +x randomizer
           ./randomizer
@@ -223,11 +223,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - spoofed: "true"
+          - manager_type: "spoofed"
             build_type: "release"
-          - spoofed: "false"
+          - manager_type: "normal"
             build_type: "release"
-          - spoofed: "false"
+          - manager_type: "normal"
             build_type: "debug"
     steps:
       - name: Checkout
@@ -238,7 +238,7 @@ jobs:
       - name: Determine manager variant
         id: determine
         run: |
-          if [ "${{ matrix.spoofed }}" == "true" ]; then
+          if [ "${{ matrix.manager_type }}" == "spoofed" ]; then
             echo "title=Spoofed-Manager" >> $GITHUB_OUTPUT
           else
             echo "title=Manager" >> $GITHUB_OUTPUT
@@ -343,7 +343,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        spoofed: ["true","false"]
+        manager_type: [ "spoofed", "normal" ]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -361,7 +361,7 @@ jobs:
       - name: Determine manager variant
         id: determine
         run: |
-          if [ "${{ matrix.spoofed }}" == "true" ]; then
+          if [ "${{ matrix.manager_type }}" == "spoofed" ]; then
             echo "title=Spoofed-Manager" >> $GITHUB_OUTPUT
             echo "topicid=${{ vars.MESSAGE_SPOOFED_THREAD_ID }}" >> $GITHUB_OUTPUT
           else
@@ -370,7 +370,7 @@ jobs:
           fi
         
       - name: Download Debug artifact
-        if: ${{ matrix.spoofed != 'true' }}
+        if: ${{ matrix.manager_type != 'spoofed' }}
         uses: actions/download-artifact@v8
         with:
           name: ${{ steps.determine.outputs.title }}-debug
@@ -394,7 +394,7 @@ jobs:
         run: |
           pip3 install python-telegram-bot
           export VERSION=$(git rev-list --count HEAD)
-          if [ ! "${{ matrix.spoofed }}" == "true" ]; then
+          if [ ! "${{ matrix.manager_type }}" == "spoofed" ]; then
             APK_DEBUG=apk/debug/*.apk
           else
             APK_DEBUG=""
