@@ -1,5 +1,5 @@
 import asyncio
-import os
+import os,re
 import random
 import sys,json
 from telegram import Bot,InputMediaDocument
@@ -127,9 +127,18 @@ def check_environ():
         MESSAGE_THREAD_ID = None
 
 async def send_media_group(bot: Bot, chat_id: int, media: list, message_thread_id=None):
-    await asyncio.sleep(random.uniform(0.2, 0.8))
-    return await bot.send_media_group(chat_id=chat_id, media=media, message_thread_id=message_thread_id,
-                                   read_timeout=350,write_timeout=350,connect_timeout=350,pool_timeout=350)
+    try:
+        await asyncio.sleep(random.uniform(0.2, 0.8))
+        return await bot.send_media_group(chat_id=chat_id, media=media, message_thread_id=message_thread_id,
+                                       read_timeout=350,write_timeout=350,connect_timeout=350,pool_timeout=350)
+    except Exception as e:
+        flood_pattern = re.compile(r"Retry in (\d+) seconds")
+        match = flood_pattern.match(e)
+        if match:
+           await asyncio.sleep(int(match.group(1)))
+           await send_send_media_group(bot=bot,chat_id=chat_id,media=media,message_thread_id=message_thread_id=None)
+        else:
+           raise
 
 async def main():
     print("[+] Uploading to telegram")
