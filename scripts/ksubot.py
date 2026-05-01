@@ -136,7 +136,7 @@ async def send_media_group(bot: Bot, chat_id: int, media: list, message_thread_i
         match = flood_pattern.match(e)
         if match:
            await asyncio.sleep(int(match.group(1)))
-           await send_send_media_group(bot=bot,chat_id=chat_id,media=media,message_thread_id=message_thread_id=None)
+           await send_send_media_group(bot=bot,chat_id=chat_id,media=media,message_thread_id=message_thread_id)
         else:
            raise
 
