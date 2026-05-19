@@ -17,12 +17,18 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v8
 
-      - name: Download artifacts
+      - name: Download Manager artifacts
         uses: actions/download-artifact@v8
         with:
           path: manager
-          pattern: "*-Manager-*"
+          pattern: "Manager-*"
           merge-multiple: true
+
+      - name: Download spoofed managers
+        uses: actions/download-artifact@v8
+        with:
+          name: Spoofed-manager-release
+          path: manager
 
       - name: Rename ksud
         run: |
