@@ -27,7 +27,7 @@ jobs:
       - name: Download spoofed managers
         uses: actions/download-artifact@v8
         with:
-          name: Spoofed-manager-release
+          name: Spoofed-Manager-release
           path: manager
 
       - name: Rename ksud
