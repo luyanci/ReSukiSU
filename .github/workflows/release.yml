@@ -24,12 +24,6 @@ jobs:
           pattern: "Manager-*"
           merge-multiple: true
 
-      - name: Download spoofed managers
-        uses: actions/download-artifact@v8
-        with:
-          name: Spoofed-Manager-release
-          path: manager
-
       - name: Rename ksud
         run: |
           mkdir -p ksud
@@ -53,5 +47,4 @@ jobs:
         with:
           files: |
             manager/*.apk
-            android*-lkm/*_kernelsu.ko
             ksud/ksud-*
