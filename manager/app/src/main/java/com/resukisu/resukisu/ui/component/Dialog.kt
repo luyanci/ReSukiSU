@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -37,6 +38,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -431,6 +433,9 @@ private fun LoadingDialog() {
 
 @Composable
 private fun ConfirmDialog(visuals: ConfirmDialogVisuals, confirm: () -> Unit, dismiss: () -> Unit) {
+    val configuration = LocalConfiguration.current
+    val dialogMaxHeight = configuration.screenHeightDp.dp * 0.6f // Dialog content max height: 60% of screen
+    
     AlertDialog(
         onDismissRequest = {
             dismiss()
@@ -439,14 +444,18 @@ private fun ConfirmDialog(visuals: ConfirmDialogVisuals, confirm: () -> Unit, di
             Text(text = visuals.title)
         },
         text = {
-            if (visuals.isMarkdown) {
-                MarkdownContent(content = visuals.content)
-            }
-            else if (visuals.isHtml) {
-                GithubMarkdown(content = visuals.content, backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh)
-            }
-            else {
-                Text(text = visuals.content)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(maxHeight = dialogMaxHeight)
+            ) {
+                if (visuals.isMarkdown) {
+                    MarkdownContent(content = visuals.content)
+                } else if (visuals.isHtml) {
+                    GithubMarkdown(content = visuals.content, backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                } else {
+                    Text(text = visuals.content)
+                }
             }
         },
         confirmButton = {
