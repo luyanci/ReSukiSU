@@ -448,6 +448,7 @@ private fun ConfirmDialog(visuals: ConfirmDialogVisuals, confirm: () -> Unit, di
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = dialogMaxHeight)
+                    .verticalScroll(rememberScrollState())
             ) {
                 if (visuals.isMarkdown) {
                     MarkdownContent(content = visuals.content)
@@ -474,15 +475,10 @@ private fun ConfirmDialog(visuals: ConfirmDialogVisuals, confirm: () -> Unit, di
 @Composable
 private fun MarkdownContent(content: String) {
     val contentColor = LocalContentColor.current
-    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(
-                state = scrollState,
-                flingBehavior = ScrollableDefaults.flingBehavior()
-            )
             .padding(12.dp)
     ) {
         AndroidView(
