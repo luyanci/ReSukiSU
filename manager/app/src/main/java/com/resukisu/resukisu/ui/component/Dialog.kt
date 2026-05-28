@@ -447,7 +447,7 @@ private fun ConfirmDialog(visuals: ConfirmDialogVisuals, confirm: () -> Unit, di
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(maxHeight = dialogMaxHeight)
+                    .heightIn(max = dialogMaxHeight)
             ) {
                 if (visuals.isMarkdown) {
                     MarkdownContent(content = visuals.content)
