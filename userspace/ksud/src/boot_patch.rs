@@ -13,6 +13,7 @@ use android_bootimg::{
 };
 use anyhow::{Context, Result, anyhow, bail, ensure};
 use memmap2::{Mmap, MmapOptions};
+use figlet_rs::{FIGlet};
 use regex_lite::Regex;
 
 use crate::assets;
@@ -485,8 +486,10 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
             partition,
             ..
         } = args;
+        let logo_printer = FIGlet::standard().unwrap();
 
-        println!(include_str!("./android/banner"));
+
+        println!("{}", logo_printer.convert("RESUKISU").unwrap());
 
         #[cfg(target_os = "android")]
         let patch_file = image.is_some();

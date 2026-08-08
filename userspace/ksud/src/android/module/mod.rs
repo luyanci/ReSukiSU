@@ -20,6 +20,7 @@ use java_properties::PropertiesIter;
 use log::{debug, error, info, warn};
 use regex_lite::Regex;
 use zip_extensions::zip_extract::zip_extract_file_to_memory;
+use figlet_rs::{FIGlet};
 
 use crate::{
     android::{
@@ -529,7 +530,10 @@ fn install_module_to_system(zip: &str) -> Result<()> {
     ensure_boot_completed()?;
 
     // print banner
-    println!(include_str!("../banner"));
+    let logo_printer = FIGlet::standard().unwrap();
+
+
+    println!("{}", logo_printer.convert("RESUKISU").unwrap());
 
     assets::ensure_binaries(false).with_context(|| "Failed to extract assets")?;
 
