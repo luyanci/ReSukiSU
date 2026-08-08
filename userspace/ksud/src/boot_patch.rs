@@ -13,7 +13,7 @@ use android_bootimg::{
 };
 use anyhow::{Context, Result, anyhow, bail, ensure};
 use memmap2::{Mmap, MmapOptions};
-use figlet_rs::{FIGlet};
+use figlet_rs::FIGlet;
 use regex_lite::Regex;
 
 use crate::assets;
