@@ -577,9 +577,11 @@ fun FlashScreen(flashIt: FlashIt) {
                 Text(
                     modifier = Modifier.padding(16.dp),
                     text = text,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.bodyMedium.copy(
+				                    fontFamily = FontFamily.Monospace
+		    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+		    softWrap =false
                 )
             }
             Spacer(modifier = Modifier.height(innerPadding.calculateBottomPadding()))
