@@ -34,5 +34,6 @@ jobs:
       - name: release
         uses: softprops/action-gh-release@v3
         with:
+          prerelease: ${{ steps.is_rc_tag.outputs.IS_RC_TAG == 'true' }}
           files: |
             manager/*.apk
