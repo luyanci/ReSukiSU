@@ -127,7 +127,7 @@ jobs:
         fi
         
         MDIR=$(realpath .)
-
+        clang --version
         make -C $KDIR M=$MDIR compile_commands.json modules CONFIG_KSU=m CONFIG_KSU_MULTI_MANAGER_SUPPORT=y CONFIG_KSU_TRACEPOINT_HOOK=y CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=y $EXTRA_ARGS
         
         echo "=== Build completed ==="
