@@ -4,6 +4,7 @@
 #include <linux/module.h>
 #include <linux/rcupdate.h>
 #include <generated/utsrelease.h>
+#include <generated/compile.h>
 #include <linux/version.h> /* LINUX_VERSION_CODE, KERNEL_VERSION macros */
 #include <linux/moduleparam.h>
 
