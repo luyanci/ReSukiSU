@@ -5,11 +5,13 @@ on:
 jobs:
   label:
     runs-on: ubuntu-latest
+    environment: action
     permissions:
       issues: write
     steps:
       - uses: actions/github-script@v9
         with:
+          github-token: ${{ secrets.GH_TOKEN || github.token }}
           script: |
             const body = context.payload.issue.body || "";
             const expectedLabels = [];
