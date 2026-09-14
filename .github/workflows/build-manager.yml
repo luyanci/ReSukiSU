@@ -377,7 +377,7 @@ jobs:
           path: ./apk/release
 
       - name: Upload to Telegram
-        if: steps.need_upload.outputs.UPLOAD == 'true'
+        if: ${{ steps.need_upload.outputs.UPLOAD == 'true' && github.event_name != 'workflow_call' }}
         env:
           CHAT_ID: ${{ vars.CHAT_ID }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
