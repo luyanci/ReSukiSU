@@ -63,3 +63,14 @@ jobs:
       with:
         name: ksuinit-x86_64
         path: userspace/ksuinit/target/x86_64-linux-android/release/ksuinit
+
+    - name: Build ksuinit riscv64
+      env:
+        ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+      run: |
+        source .github/scripts/setup-rust-build.sh riscv64-linux-android 35
+        BUILTINS="$($CLANG_PATH --print-resource-dir)/lib/linux/libclang_rt.builtins-riscv64-android.a"
+        test -f "$BUILTINS"
+        export RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wno-unused-command-line-argument -C link-arg=$BUILTINS"
+        cd userspace/ksuinit
+        cargo build --package ksuinit --target=riscv64-linux-android --release --config .github/riscv64-cargo.toml

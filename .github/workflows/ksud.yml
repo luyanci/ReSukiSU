@@ -46,6 +46,7 @@ jobs:
         run: |
           mv ksuinit-aarch64/ksuinit ./userspace/ksud/bin/aarch64/
           mv ksuinit-x86_64/ksuinit ./userspace/ksud/bin/x86_64/
+          mv ksuinit-riscv64/ksuinit ./userspace/ksud/bin/riscv64/
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -79,7 +80,11 @@ jobs:
           fi
 
           cd userspace/ksud/
-          cargo ndk b -P 26 -t ${{ inputs.target }} -r -Z build-std-features="optimize_for_size" -Z trim-paths
+          if [ "${{ inputs.target }}" == "riscv64-linux-android" ]; then
+            cargo ndk b -P 35 -t ${{ inputs.target }} -r -Z build-std-features="optimize_for_size" -Z trim-paths --config .github/riscv64-cargo.toml
+          else
+            cargo ndk b -P 26 -t ${{ inputs.target }} -r -Z build-std-features="optimize_for_size" -Z trim-paths
+          fi
 
       - name: Upload ksud artifact
         uses: actions/upload-artifact@v7
