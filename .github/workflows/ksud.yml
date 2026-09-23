@@ -81,7 +81,7 @@ jobs:
 
           cd userspace/ksud/
           if [ "${{ inputs.target }}" == "riscv64-linux-android" ]; then
-            cargo ndk b -P 35 -t ${{ inputs.target }} -r -Z build-std-features="optimize_for_size" -Z trim-paths --config .github/riscv64-cargo.toml
+            cargo ndk b -P 35 -t ${{ inputs.target }} -r -Z build-std-features="optimize_for_size" -Z trim-paths
           else
             cargo ndk b -P 26 -t ${{ inputs.target }} -r -Z build-std-features="optimize_for_size" -Z trim-paths
           fi
