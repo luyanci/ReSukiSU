@@ -59,8 +59,8 @@ extern "C" fn sigsys_handler(
         }
         #[cfg(target_arch = "riscv64")]
         {
-            let ucontext = ctx.cast::<ksu_uapi::ucontext_t>();
-            (*ucontext).uc_mcontext.__gregs[ksu_uapi::REG_A0 as usize] =
+            let ucontext = ctx.cast::<uapi::ucontext_t>();
+            (*ucontext).uc_mcontext.__gregs[uapi::REG_A0 as usize] =
                 (-libc::EPERM) as libc::c_ulong;
         }
     }
