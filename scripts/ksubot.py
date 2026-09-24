@@ -201,13 +201,10 @@ async def main():
         print("[-] Caption is too long,so it will be sent as a separate message without caption for files")
         no_caption = True
     upload_release_files = []
-    universal_file = []
+
     for index, file in enumerate(files):
         if os.path.basename(file).find("debug") != -1:
             # If the filename contains "debug", skip it.
-            continue
-        elif os.path.basename(file).find("universal") != -1:
-            universal_file.append(InputMediaDocument(media=open(file, "rb"), filename=os.path.basename(file), caption=f"{caption if not no_caption else '<b>Release universal Manager</b>'}", parse_mode=ParseMode.HTML))
             continue
         elif index == len(files) - 1:
             # Only add caption to the last file
@@ -227,8 +224,6 @@ async def main():
             await send_message(bot=bot, chat_id=CHAT_ID, text=caption, message_thread_id=MESSAGE_THREAD_ID)
         if len(upload_release_files) > 0:
             await send_media_group(bot=bot, chat_id=CHAT_ID, media=upload_release_files, message_thread_id=MESSAGE_THREAD_ID)
-        if len(universal_file) > 0:
-            await send_media_group(bot=bot, chat_id=CHAT_ID, media=universal_file, message_thread_id=MESSAGE_THREAD_ID)
         if TITLE.lower() == "manager" and (BRANCH == "main" or GITHUB_REF_TYPE == "tag"):
             print("[+] Sending main branch updated message")
             await send_message(bot=bot,chat_id=CHAT_ID, text=MAIN_UPDATED_MSG, message_thread_id=DEVELOPING_THREAD_ID)
