@@ -15,8 +15,8 @@ TITLE = os.environ.get("TITLE")
 VERSION = os.environ.get("VERSION")
 BRANCH = os.environ.get("BRANCH")
 
-API_ID = 611335
-API_HASH = "d524b414d21f4d37f08684c1df41ac9c"
+API_ID = 21724
+API_HASH = "3e0cb5efcd52300aec5994fdfc5bdc16"
 
 GITHUB_EVENT = json.loads(open(os.environ.get("GITHUB_EVENT_PATH"), "r").read())
 GITHUB_REF_TYPE = os.environ.get("GITHUB_REF_TYPE")
