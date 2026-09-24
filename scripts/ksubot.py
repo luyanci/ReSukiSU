@@ -15,6 +15,9 @@ TITLE = os.environ.get("TITLE")
 VERSION = os.environ.get("VERSION")
 BRANCH = os.environ.get("BRANCH")
 
+API_ID = 611335
+API_HASH = "d524b414d21f4d37f08684c1df41ac9c"
+
 GITHUB_EVENT = json.loads(open(os.environ.get("GITHUB_EVENT_PATH"), "r").read())
 GITHUB_REF_TYPE = os.environ.get("GITHUB_REF_TYPE")
 
@@ -89,6 +92,36 @@ main 分支已更新，此 topic 的管理器可能已过时
 
 def escape_telegram_html(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "&#39;")
+
+async def start_bot_api():
+    print("[+] Starting Telegram Bot API")
+    import subprocess
+    global process
+    process = subprocess.Popen(["./telegram-bot-api-binary", f"--api-id={API_ID}", f"--api-hash={API_HASH}", "--local"])
+    
+
+async def wait_for_bot_api():
+    import httpx
+    await start_bot_api()
+    print("[+] Waiting for Telegram Bot API to start...")
+    async with httpx.AsyncClient() as client:
+        for count in range(30):
+            try:
+                response = await client.get(f"http://localhost:8081/bot{BOT_TOKEN}/getMe")
+                if response.status_code < 500:
+                    print("[+] Telegram Bot API started")
+                    break
+            except:
+                #print(process.stdout.readline())
+                print("Still wait..." + str(count))
+                await asyncio.sleep(1)
+                pass
+        else:
+            process.kill()
+            print("[-] Failed to start Telegram Bot API")
+            exit(1)
+        return 
+        
 
 def get_caption():
     msg = MSG_TEMPLATE.format(
@@ -187,6 +220,7 @@ async def send_media_group(bot: Bot, chat_id: int, media: list, message_thread_i
 async def main():
     print("[+] Uploading to telegram")
     check_environ()
+    await wait_for_bot_api()
     files = sys.argv[1:]
     print("[+] Files:", files)
     if len(files) <= 0:
@@ -194,7 +228,7 @@ async def main():
         exit(1)
     print("[+] Logging in Telegram with bot")
     no_caption=False
-    bot = Bot(token=BOT_TOKEN)
+    bot = Bot(token=BOT_TOKEN,base_url="http://127.0.0.1:8081/bot",base_file_url="http://127.0.0.1:8081/file/bot")
     caption = get_caption()
     caption_debug = get_caption_for_debug()
     if len(caption) > 1024 or len(caption_debug) > 1024:
@@ -228,6 +262,7 @@ async def main():
             print("[+] Sending main branch updated message")
             await send_message(bot=bot,chat_id=CHAT_ID, text=MAIN_UPDATED_MSG, message_thread_id=DEVELOPING_THREAD_ID)
     print("[+] Done!")
+    process.kill()
 
 if __name__ == "__main__":
     try:
