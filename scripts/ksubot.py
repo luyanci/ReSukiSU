@@ -34,7 +34,7 @@ try:
             if len(msg) > 200:
                 msg = msg[:197] + '...'
             msg += ' by ' + commit['author']['username']
-            if i > 1:
+            if i > 1 and not (len(msg) + len('\n------') + 1 + len(commit_message) > 600):
                 msg += '\n------'
             if len(msg) + 1 + len(commit_message) > 600:
                 commit_message = f'{commit_message}\n(other {i} commits)'
@@ -267,10 +267,14 @@ async def main():
             print("[+] Sending main branch updated message")
             await send_message(bot=bot,chat_id=CHAT_ID, text=MAIN_UPDATED_MSG, message_thread_id=DEVELOPING_THREAD_ID)
     print("[+] Done!")
-    process.kill()
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:
         print(f"[-] An error occurred: {e}")
+    finally:
+        try:
+            process.kill()
+        except:
+            pass
