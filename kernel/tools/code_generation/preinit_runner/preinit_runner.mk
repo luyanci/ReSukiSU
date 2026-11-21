@@ -7,9 +7,9 @@ KSU_UAPI_INC := $(objtree)/usr/include
 # that will be created by headers_install,make 5.x kernels happy.
 ifneq ($(CONFIG_KSU),)
 ifeq ($(wildcard $(KSU_UAPI_INC)/linux/unistd.h),)
-KSU_HEADERS_INSTALL_OUTPUT := $(shell $(MAKE) -s -C "$(abspath $(srctree))" \
-	O="$(abspath $(objtree))" ARCH="$(ARCH)" \
-	headers_install INSTALL_HDR_PATH="$(abspath $(objtree))/usr")
+KSU_HEADERS_INSTALL_OUTPUT := $(shell $(MAKE) -s -f $(srctree)/Makefile \
+	ARCH="$(ARCH)" headers_install \
+	INSTALL_HDR_PATH="$(abspath $(objtree))/usr")
 endif
 endif
 
